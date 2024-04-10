@@ -20,6 +20,7 @@ import java.util.List;
 
 import edu.northeastern.smartspendmax.R;
 import edu.northeastern.smartspendmax.model.Coupon;
+import edu.northeastern.smartspendmax.util.ImageHelper;
 
 public class CouponAdapter extends RecyclerView.Adapter<CouponAdapter.NotificationViewHolder> {
 
@@ -45,6 +46,7 @@ public class CouponAdapter extends RecyclerView.Adapter<CouponAdapter.Notificati
     @Override
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
         Coupon coupon = couponList.get(position);
+        holder.ivAdsMakerImage.setImageResource(ImageHelper.setImageBasedOnString(coupon.getAdMakerName()));
         holder.tvAdsMaker.setText(coupon.getAdMakerName());
         holder.tvDiscount.setText(coupon.getDiscount());
         holder.tvDescription.setText(coupon.getDescription());
@@ -55,18 +57,18 @@ public class CouponAdapter extends RecyclerView.Adapter<CouponAdapter.Notificati
             public void onClick(View v) {
                 System.out.println("Added item to wallet: " + coupon.getCouponId());
                 db.getReference("user-coupon/" + currUserId + "/collectedCoupon")
-                    .child(coupon.getCouponId()).setValue(true).addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            if (task.isSuccessful()) {
-                                Toast.makeText(context, "Add coupon successfully", Toast.LENGTH_SHORT);
-                                System.out.println("write successful: " + coupon.getCouponId() + ", for user: " + currUserId);
-                            } else {
-                                Toast.makeText(context, "Fail to add coupon.", Toast.LENGTH_SHORT);
-                                System.out.println("write fail: " + coupon.getCouponId() + ", for user: " + currUserId);
+                        .child(coupon.getCouponId()).setValue(true).addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                if (task.isSuccessful()) {
+                                    Toast.makeText(context, "Add coupon successfully", Toast.LENGTH_SHORT);
+                                    System.out.println("write successful: " + coupon.getCouponId() + ", for user: " + currUserId);
+                                } else {
+                                    Toast.makeText(context, "Fail to add coupon.", Toast.LENGTH_SHORT);
+                                    System.out.println("write fail: " + coupon.getCouponId() + ", for user: " + currUserId);
+                                }
                             }
-                        }
-                    });
+                        });
             }
         });
 
