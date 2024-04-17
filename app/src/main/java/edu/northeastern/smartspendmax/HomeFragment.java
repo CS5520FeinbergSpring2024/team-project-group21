@@ -111,29 +111,24 @@ public class HomeFragment extends Fragment {
         currMonth = calendar.get(Calendar.MONTH) + 1;
         currYear = calendar.get(Calendar.YEAR);
 
-        // TODO just for test
-        currMonth = 4;
-
         String formattedMonth = String.format("%02d", currMonth);
         String formattedLastDay = String.format("%02d", calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
 
         firstDayOfMonth = formattedMonth + "/01/" + currYear;
         lastDayOfMonth = formattedMonth + "/" + formattedLastDay + "/" + currYear;
-        System.out.println("firstDayOfMonth: " + firstDayOfMonth + ", lastDayOfMonth = " + lastDayOfMonth);
+        Log.d(TAG, "firstDayOfMonth: " + firstDayOfMonth + ", lastDayOfMonth = " + lastDayOfMonth);
     }
 
     private void getTotalSpending() {
-//        db.getReference("spendings").child(currUserId).orderByChild("/timestamp").startAt("03").endAt("2024").addListenerForSingleValueEvent(
         db.getReference("spendings").child(currUserId).orderByChild("timestamp").startAt(firstDayOfMonth).endAt(lastDayOfMonth + "\uf8ff")
                 .addListenerForSingleValueEvent(
                 new ValueEventListener() {
 
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Log.d(TAG, "onDataChange: " + snapshot.getChildrenCount());
+                        Log.d(TAG, "get spending records: " + snapshot.getChildrenCount());
                         for (DataSnapshot entry : snapshot.getChildren()) {
                             SpendingRecord record = entry.getValue(SpendingRecord.class);
-                            System.out.println("record.amount = " + record.getAmount());
                             totalSpending += record.getAmount().intValue();
 
                         }
@@ -154,14 +149,7 @@ public class HomeFragment extends Fragment {
 
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Log.d(TAG, "budget onDataChange: " + snapshot.getChildrenCount() + ", totalBudget = " + totalBudget);
                         Budget budget = snapshot.getValue(Budget.class);
-                        System.out.println("budget.getHousing = " + budget.getHousing());
-                        System.out.println("budget.getGrocery = " + budget.getGrocery());
-                        System.out.println("budget.getUtilities = " + budget.getUtilities());
-                        System.out.println("budget.getTransportation = " + budget.getTransportation());
-                        System.out.println("budget.getPersonalExpense = " + budget.getPersonalExpense());
-                        System.out.println("budget.getOther = " + budget.getOther());
 
                         totalBudget += budget.getHousing()
                                 + budget.getGrocery()
@@ -169,7 +157,6 @@ public class HomeFragment extends Fragment {
                                 + budget.getTransportation()
                                 + budget.getPersonalExpense()
                                 + budget.getOther();
-                        System.out.println("totalBudget = " + totalBudget);
                         assembleChart();
                     }
 
@@ -202,7 +189,6 @@ public class HomeFragment extends Fragment {
         PieData pieData = new PieData(pieDataSet);
         overallChart.setData(pieData);
         overallChart.setDrawEntryLabels(false);
-//        overallChart.setExtraOffsets(8, 8, 8, 8);
         Legend legend = overallChart.getLegend();
         legend.setEnabled(true);
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -234,14 +220,13 @@ public class HomeFragment extends Fragment {
         DatabaseReference userCouponRef = db.getReference("user-coupon/" + currUserId);
         List<String> receivedCoupons = new ArrayList<>();
         List<String> collectedCoupons = new ArrayList<>();
-        userCouponRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        userCouponRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 // Retrieve receivedCoupon
                 DataSnapshot receivedCouponSnapshot = snapshot.child("receivedCoupon");
                 for (DataSnapshot couponSnapshot : receivedCouponSnapshot.getChildren()) {
                     String couponId = couponSnapshot.getKey();
-                    System.out.println("received coupon: " + couponId);
                     receivedCoupons.add(couponId);
                 }
 
@@ -249,7 +234,6 @@ public class HomeFragment extends Fragment {
                 DataSnapshot collectedCouponSnapshot = snapshot.child("collectedCoupon");
                 for (DataSnapshot couponSnapshot : collectedCouponSnapshot.getChildren()) {
                     String couponId = couponSnapshot.getKey();
-                    System.out.println("collected coupon: " + couponId);
                     collectedCoupons.add(couponId);
                 }
                 for (String c : receivedCoupons) {
@@ -260,6 +244,7 @@ public class HomeFragment extends Fragment {
                 if (uncollectedCouponIds.size() == 0) {
                     tv_rv_coupons_placeholder.setVisibility(View.VISIBLE);
                 } else {
+                    tv_rv_coupons_placeholder.setVisibility(View.INVISIBLE);
                     getCouponDetails();
                 }
             }
@@ -274,15 +259,14 @@ public class HomeFragment extends Fragment {
     private void getCouponDetails() {
         for (String couponId : uncollectedCouponIds) {
             Log.d(TAG, "uncollected coupon id: " + couponId);
-            db.getReference("coupons").child(couponId).addListenerForSingleValueEvent(new ValueEventListener() {
+            db.getReference("coupons").child(couponId).addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-//                    Log.d(TAG, "onDataChange: snapshot size: " + snapshot.getChildrenCount());
                     Coupon coupon = snapshot.getValue(Coupon.class);
                     coupon.setCouponId(couponId);
+                    coupon.setCollected(false);
                     uncollectedCouponDetails.add(coupon);
                     CouponAdapter adapter = new CouponAdapter(view.getContext(), uncollectedCouponDetails, currUserId);
-                    Log.d(TAG, "uncollectedCouponDetails size: " + uncollectedCouponDetails.size());
                     recyclerView.setAdapter(adapter);
                 }
 
